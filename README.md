@@ -139,6 +139,32 @@ Une fois connecté, vous devriez voir un statut **"Enregistré"**.
 
 ## 🤖 Automatisation et déploiement
 
+Mise en place d'un IVR (Serveur Vocal Interactif)
+
+Nous avons configuré un menu vocal interactif dans Asterisk permettant aux utilisateurs de sélectionner différents services :
+```sh
+[ivr1]
+exten => s,1,Answer()
+exten => s,2,Set(TIMEOUT(response)=10)
+exten => s,3,agi(googletts.agi,"Bonjour et bienvenue chez La Plateforme !",fr,any)
+exten => s,4,agi(googletts.agi,"Pour joindre Alice, taper 1.",fr,any)
+exten => s,5,agi(googletts.agi,"Pour joindre Bob, taper 2.",fr,any)
+exten => s,6,agi(googletts.agi,"Pour joindre Malcom, taper 3.",fr,any)
+exten => s,7,WaitExten()
+
+exten =>1,1,Dial(PJSIP/alice,10)
+exten =>2,1,Dial(PJSIP/bob,10)
+exten =>3,1,Dial(PJSIP/malcom,10)
+
+exten => [04-9#],1,agi(googletts.agi,"Entrée invalide",fr,any)
+exten => _[04-9#],2,Goto(ivr_1,s,1)
+exten => t,1,Goto(ivr_1,s,3)
+```
+
+En appelant le numéro `900`, cela va appeler l'IVR.
+
+# Script qui appel aléatoire les utilisateurs 
+
 Créer un script `script.sh` pour automatiser les appels :
 ```sh
 nano script.sh
@@ -148,34 +174,54 @@ Coller ce contenu :
 ```sh
 #!/bin/bash
 
-CSV_FILE="contact.csv"
+CSV_FILE="contacts.csv"
 CALLS_DIR="/var/spool/asterisk/outgoing/"
-CALLER_ID="9000"
+CALLER_ID="LaPlateforme_"
 
+# Vérifier si le fichier CSV existe
 if [[ ! -f "$CSV_FILE" ]]; then
     echo "❌ Erreur : le fichier $CSV_FILE n'existe pas."
     exit 1
 fi
 
-tail -n +2 "$CSV_FILE" | while IFS=, read -r NAME NUMBER; do
-    if [[ -z "$NAME" || -z "$NUMBER" ]]; then
-        continue
-    fi
-    CALL_FILE="/tmp/call_$NUMBER.call"
-    cat <<EOF > "$CALL_FILE"
+# Sélectionner un contact au hasard dans le fichier CSV (sans l'entête)
+SELECTED_CONTACT=$(tail -n +2 "$CSV_FILE" | shuf -n 1)
+
+# Extraire le nom et le numéro
+IFS=',' read -r NAME NUMBER <<< "$SELECTED_CONTACT"
+
+# Vérifier que les champs ne sont pas vides
+if [[ -z "$NAME" || -z "$NUMBER" ]]; then
+    echo "⚠️ Contact invalide, sélection d'un autre..."
+    exit 1
+fi
+
+CALL_FILE="/tmp/call_$NUMBER.call"
+
+echo "📞 Génération de l'appel pour $NAME ($NUMBER)..."
+
+cat <<EOF > "$CALL_FILE"
 Channel: PJSIP/$NUMBER
-CallerID: "Prospection" <$CALLER_ID>
+CallerID: "LaPlateforme_" <$CALLER_ID>
 MaxRetries: 2
 RetryTime: 60
 WaitTime: 30
-Context: auto_calls
+Context: outgoing-calls
 Extension: s
 Priority: 1
 EOF
-    chmod 777 "$CALL_FILE"
-    mv "$CALL_FILE" "$CALLS_DIR/"
-    echo "✅ Appel généré pour $NAME ($NUMBER)"
-done
+
+# Vérifier que le fichier a été créé
+if [[ ! -f "$CALL_FILE" ]]; then
+    echo "❌ Erreur : Impossible de créer le fichier d'appel pour $NAME ($NUMBER)."
+    exit 1
+fi
+
+# Déplacer le fichier avec les bonnes permissions
+chmod 777 "$CALL_FILE"
+mv "$CALL_FILE" "$CALLS_DIR/"
+
+echo "✅ Appel généré pour $NAME ($NUMBER)"
 ```
 
 Donner les permissions et exécuter :
