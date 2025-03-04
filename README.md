@@ -139,7 +139,7 @@ Une fois connecté, vous devriez voir un statut **"Enregistré"**.
 
 ## 🤖 Automatisation et déploiement
 
-Mise en place d'un IVR (Serveur Vocal Interactif)
+## Mise en place d'un IVR (Serveur Vocal Interactif)
 
 Nous avons configuré un menu vocal interactif dans Asterisk permettant aux utilisateurs de sélectionner différents services :
 ```sh
@@ -163,7 +163,7 @@ exten => t,1,Goto(ivr_1,s,3)
 
 En appelant le numéro `900`, cela va appeler l'IVR.
 
-# Script qui appel aléatoire les utilisateurs 
+## Script qui appel aléatoire les utilisateurs 
 
 Créer un script `script.sh` pour automatiser les appels :
 ```sh
