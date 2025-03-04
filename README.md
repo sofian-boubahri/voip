@@ -224,6 +224,17 @@ mv "$CALL_FILE" "$CALLS_DIR/"
 echo "✅ Appel généré pour $NAME ($NUMBER)"
 ```
 
+Dans `/etc/asterisk/extensions.conf`
+
+```sh
+[auto_calls]
+exten => s,1,Answer()
+same => n,Wait(1)
+same => n,AGI(googletts.agi,"Bonjour, ceci est un appel automatique. Nous vous présentons l'école de la plateforme, un établissement innovant où vous pouvez développer vos compétences et acquérir de nouvelles",fr)
+same => n,Hangup()
+```
+Quand ça va appeler les utilisateurs, cela va dire lire ce message en question.
+
 Donner les permissions et exécuter :
 ```sh
 chmod +x script.sh
