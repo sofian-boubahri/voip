@@ -235,6 +235,3 @@ chmod +x script.sh
 ## 📝 Conclusion
 
 Ce guide vous a permis d'installer et de sécuriser un serveur VoIP avec Asterisk. Vous pouvez maintenant tester et optimiser votre infrastructure.
-
-Bonne configuration ! 🚀
-
